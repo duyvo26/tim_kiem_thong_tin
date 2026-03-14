@@ -58,13 +58,15 @@ IDF    docId1:TF-IDF1 docId2:TF-IDF2 ...
 | Trường | Kiểu | Ý nghĩa |
 |---|---|---|
 | `IDF` | float (5 chữ số thập phân) | Inverse Document Frequency = `log₁₀(N / DF)`, N là tổng số tài liệu |
-| `docId:TF-IDF` | string:float | Tên file tài liệu và điểm TF-IDF đã tính sẵn = `TF × IDF` |
+| `docId:TF` | string:int | Tên file tài liệu và **TF thô** (số lần từ xuất hiện trong tài liệu đó) |
+
+> **Lý do không lưu TF×IDF:** Khi corpus được cập nhật thêm tài liệu mới, N thay đổi → IDF thay đổi toàn bộ → mọi giá trị TF×IDF đã lưu đều sai (stale). Lưu TF thô đảm bảo dữ liệu luôn đúng; TF-IDF sẽ được tính on-the-fly lúc tìm kiếm: `TF-IDF = TF × IDF`.
 
 **Ví dụ:**
 ```
-0.30103    1001.docx:0.30103 1005.pdf:0.60206 1003.docx:0.90309
-0.39794    1002.docx:0.79588 1004.docx:0.39794
-0.15490    1001.docx:0.46470 1003.docx:0.30980 1006.pdf:0.15490
+0.30103    1001.docx:3 1005.pdf:6 1003.docx:9
+0.39794    1002.docx:2 1004.docx:1
+0.15490    1001.docx:3 1003.docx:2 1006.pdf:1
 ```
 
 ---
