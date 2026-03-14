@@ -175,11 +175,12 @@ def process_single_file(file_path, stopwords):
 def build_inverted_index(dataset_dir, output_dir, stopwords_path):
     """
     Tạo bộ chỉ mục nghịch đảo Inverted Index tối ưu thời gian IO với cách đọc nạp 1 lần chạy (One Pass Indexing).
-    Kết quả ghi ra 2 tệp tin: dictionary.txt và invertedIndex.txt lưu các tham số cấu trúc TF-IDF cần thiết.
+    Kết quả ghi ra 1 tệp tin duy nhất invertedIndex.txt, mỗi dòng lưu đầy đủ thông tin của 1 từ:
+        <Term>\t<DF>\t<IDF>\t<docId1>:<TF-IDF1> <docId2>:<TF-IDF2> ...
 
     Args:
         dataset_dir (str): Thư mục dữ liệu chứa kho văn bản tài liệu dạng hỗn hợp (.doc, .pdf, .html, ...).
-        output_dir (str): Thư mục đích mà 2 cấu trúc tệp tin từ điển và chỉ mục sẽ được lưu xuất.
+        output_dir (str): Thư mục đích mà tệp chỉ mục sẽ được lưu xuất.
         stopwords_path (str): File text liệt kê stopwords để lọc.
     """
     stopwords = load_stopwords(stopwords_path)
@@ -210,39 +211,42 @@ def build_inverted_index(dataset_dir, output_dir, stopwords_path):
         print("Không có tài liệu nào để lập chỉ mục.")
         return
 
-    # 2. Xây dựng và ghi ra hai tập tin dictionary.txt, invertedIndex.txt
+    # 2. Xây dựng và ghi ra 2 tập tin theo đúng yêu cầu đề bài:
+    #    - dictionary.txt  : Term | DF | IDF | Offset_byte (trỏ vào invertedIndex.txt)
+    #    - invertedIndex.txt: <docId1>:<TF-IDF1> <docId2>:<TF-IDF2> ...  (1 dòng / term)
     os.makedirs(output_dir, exist_ok=True)
     dict_path = os.path.join(output_dir, "dictionary.txt")
-    inv_path = os.path.join(output_dir, "invertedIndex.txt")
+    inv_path  = os.path.join(output_dir, "invertedIndex.txt")
 
     with (
-        open(dict_path, "w", encoding="utf-8", newline='\n') as f_dict,
-        open(inv_path, "w", encoding="utf-8", newline='\n') as f_inv,
+        open(dict_path, "w", encoding="utf-8", newline="\n") as f_dict,
+        open(inv_path,  "w", encoding="utf-8", newline="\n") as f_inv,
     ):
-        # Tiêu đề cột dictionary
-        f_dict.write("Term\tDF\tIDF\tOffset_trong_InvertedIndex(byte)\n")
+        # Tiêu đề cột dictionary.txt (Term | DF | Offset)
+        f_dict.write("Term\tDF\tOffset\n")
 
-        offset = 0
+        offset = 0  # byte offset tích lũy trong invertedIndex.txt
+
         for term, postings in inverted_index_raw.items():
-            df = len(postings)
-            idf = math.log10(doc_count / df)  # công thức log cơ số 10
+            df  = len(postings)
+            idf = math.log10(doc_count / df)
 
-            # Xây dựng xâu lưu danh sách posting của "term"
+            # Xây dựng posting list: docId1:TF1 docId2:TF2 ...  (lưu TF thô, KHÔNG nhân IDF)
+            # → Khi corpus cập nhật thêm tài liệu mới, IDF thay đổi nhưng TF vẫn đúng
+            # → TF-IDF = TF × IDF sẽ được tính on-the-fly lúc tìm kiếm
             posting_strs = []
             for doc_id, tf in postings.items():
-                # Tính TF-IDF
-                tf_idf = tf * idf
-                posting_strs.append(f"{doc_id}:{tf_idf:.5f}")
+                posting_strs.append(f"{doc_id}:{tf}")
 
-            # Cấu trúc ghi Inverted Index: <Term> <docId1>:<tfidf1> <docId2>:<tfidf2> ...
-            # Bổ sung term vào đầu dòng để file txt dễ debug và tường minh hơn
-            posting_line = f"{term} " + " ".join(posting_strs) + "\n"
-
-            # Tính độ dài của chuỗi được mã hóa UTF-8 để trỏ đến đầu chuỗi kế tiếp
-            byte_len = len(posting_line.encode("utf-8"))
-
+            # --- invertedIndex.txt ---
+            # Mỗi dòng: <IDF>\t<docId1>:<tfidf1> <docId2>:<tfidf2> ...\n
+            posting_line = f"{idf:.5f}\t" + " ".join(posting_strs) + "\n"
+            byte_len = len(posting_line.encode("utf-8"))  # đếm byte UTF-8 chính xác
             f_inv.write(posting_line)
-            f_dict.write(f"{term}\t{df}\t{idf:.5f}\t{offset}\n")
+
+            # --- dictionary.txt ---
+            # Ghi offset *trước* khi cộng thêm, để trỏ đúng đầu dòng posting vừa ghi
+            f_dict.write(f"{term}\t{df}\t{offset}\n")
 
             offset += byte_len
 
