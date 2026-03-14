@@ -4,12 +4,11 @@ Bài thực hành TKTT - B1, VÕ KHƯƠNG DUY
 
 import os
 import py_vncorenlp
-import asyncio
 import docx
 import math
 import collections
+from bs4 import BeautifulSoup
 from pdfminer.high_level import extract_text
-from crawl4ai import AsyncWebCrawler
 
 
 DIR_ROOT = os.path.dirname(os.path.abspath(".env"))
@@ -56,29 +55,33 @@ def read_pdf(file_path):
     return extract_text(file_path)
 
 
-async def process_html(file_path):
+def read_html(file_path):
     """
-    Đọc nội dung và làm sạch tệp tin HTML thông qua thư viện Crawl4AI.
+    Đọc và trích xuất văn bản từ tệp HTML/HTM bằng BeautifulSoup.
+    Chỉ lấy nội dung từ các thẻ thân bài (<p>, <h1>-<h6>, <li>) —
+    bỏ qua script, style, nav, footer để tránh rác.
 
     Args:
         file_path (str): Đường dẫn đến file .html hoặc .htm
 
     Returns:
-        str: Nội dung file đã được lọc bỏ các thẻ HTML, chỉ giữ lại văn bản dưới chuẩn Markdown.
+        str: Nội dung văn bản đã được làm sạch.
     """
-    async with AsyncWebCrawler() as crawler:
-        result = await crawler.arun(
-            url=f"file://{os.path.abspath(file_path)}", bypass_cache=True
-        )
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        soup = BeautifulSoup(f, "html.parser")
 
-        # Sử dụng thuộc tính mới thay vì fit_markdown đã deprecated
-        return (
-            result.markdown
-            if type(result.markdown) == str
-            else getattr(
-                result.markdown, "fit_markdown", getattr(result, "markdown", "")
-            )
-        )
+    # Xóa các thẻ không chứa nội dung
+    for tag in soup(["script", "style", "nav", "footer", "header", "aside", "noscript"]):
+        tag.decompose()
+
+    # Lấy text từ các thẻ nội dung chính
+    texts = []
+    for tag in soup.find_all(["p", "h1", "h2", "h3", "h4", "h5", "h6", "li"]):
+        t = tag.get_text(separator=" ", strip=True)
+        if t:
+            texts.append(t)
+
+    return "\n".join(texts)
 
 
 def read_file(file_path):
@@ -103,7 +106,7 @@ def read_file(file_path):
         return read_pdf(file_path)
 
     elif ext in [".html", ".htm"]:
-        return asyncio.run(process_html(file_path))
+        return read_html(file_path)
 
     else:
         raise ValueError("Unsupported file type")
