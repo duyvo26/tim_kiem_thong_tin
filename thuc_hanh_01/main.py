@@ -102,7 +102,7 @@ def read_file(file_path):
     elif ext == ".pdf":
         return read_pdf(file_path)
 
-    elif ext in [".html"]:
+    elif ext in [".html", ".htm"]:
         return asyncio.run(process_html(file_path))
 
     else:
