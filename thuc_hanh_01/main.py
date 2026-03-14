@@ -216,10 +216,10 @@ def build_inverted_index(dataset_dir, output_dir, stopwords_path):
     inv_path = os.path.join(output_dir, "invertedIndex.txt")
 
     with (
-        open(dict_path, "w", encoding="utf-8") as f_dict,
-        open(inv_path, "w", encoding="utf-8") as f_inv,
+        open(dict_path, "w", encoding="utf-8", newline='\n') as f_dict,
+        open(inv_path, "w", encoding="utf-8", newline='\n') as f_inv,
     ):
-        # Tiêu đề cột
+        # Tiêu đề cột dictionary
         f_dict.write("Term\tDF\tIDF\tOffset_trong_InvertedIndex(byte)\n")
 
         offset = 0
@@ -234,8 +234,9 @@ def build_inverted_index(dataset_dir, output_dir, stopwords_path):
                 tf_idf = tf * idf
                 posting_strs.append(f"{doc_id}:{tf_idf:.5f}")
 
-            # Cấu trúc ghi: <docId1>:<tfidf1> <docId2>:<tfidf2> ...
-            posting_line = " ".join(posting_strs) + "\n"
+            # Cấu trúc ghi Inverted Index: <Term> <docId1>:<tfidf1> <docId2>:<tfidf2> ...
+            # Bổ sung term vào đầu dòng để file txt dễ debug và tường minh hơn
+            posting_line = f"{term} " + " ".join(posting_strs) + "\n"
 
             # Tính độ dài của chuỗi được mã hóa UTF-8 để trỏ đến đầu chuỗi kế tiếp
             byte_len = len(posting_line.encode("utf-8"))
