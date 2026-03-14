@@ -40,4 +40,5 @@ pytest_cache/
 
 # Folder
 /docs/
-/vncorenlp/
+# /vncorenlp/
+desktop.ini
