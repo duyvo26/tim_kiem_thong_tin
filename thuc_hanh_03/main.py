@@ -51,7 +51,7 @@ def print_result(label: str, word: str, results: list[tuple[str, float]]):
             print(f"    {rank:>2}. {w:<25} score = {score:.4f}")
 
 
-def find_best_result(model_obj, query: str, method_name: str) -> tuple[str, list]:
+def find_best_result(model_obj, query: str) -> tuple[str, list]:
     """
     Tìm trực tiếp từ khóa (token) đầu tiên được quét ra bởi bộ tokenizer.
     Không tìm được -> Dừng luôn (Trả về rỗng). Không cố tình tìm các từ đằng sau (Fallback).
@@ -147,11 +147,11 @@ def main():
         print(f"{'─' * 55}")
 
         # Method 1
-        found_word_m1, res_m1 = find_best_result(co_model, core_query, "M1")
+        found_word_m1, res_m1 = find_best_result(co_model, core_query)
         print_result("Ma trận C", found_word_m1, res_m1)
 
         # Method 2
-        found_word_m2, res_m2 = find_best_result(w2v_model, core_query, "M2")
+        found_word_m2, res_m2 = find_best_result(w2v_model, core_query)
         print_result("Word2Vec ", found_word_m2, res_m2)
 
         all_results[query_label] = {

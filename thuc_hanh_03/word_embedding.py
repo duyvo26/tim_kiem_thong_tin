@@ -13,12 +13,7 @@ from gensim.models import Word2Vec
 class WordEmbeddingModel:
     """
     Wrapper cho Word2Vec CBOW (sg=0).
-
-    Tham số theo đề bài:
-        - CBOW: sg=0
-        - window=3 (3 từ bên trái + 3 từ bên phải)
-        - vector_size=100
-        - min_count=1 (giữ nguyên từ ít gặp trong corpus nhỏ)
+    Tham số theo đề bài: CBOW, window=3
     """
 
     def __init__(self,
@@ -87,11 +82,3 @@ class WordEmbeddingModel:
         if self.model:
             self.model.save(path)
             print(f"  Model đã lưu tại: {path}")
-
-    @classmethod
-    def load(cls, path: str) -> "WordEmbeddingModel":
-        """Nạp model đã lưu."""
-        obj = cls()
-        obj.model = Word2Vec.load(path)
-        print(f"  Model đã nạp từ: {path}")
-        return obj
