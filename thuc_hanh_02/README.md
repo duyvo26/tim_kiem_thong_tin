@@ -4,6 +4,18 @@ GooSearch là một hệ thống công cụ tìm kiếm tài liệu (Information
 
 ---
 
+## Giao diện hệ thống
+
+**Trang chủ (Home)**
+
+![Trang chủ GooSearch](img_0.JPG)
+
+**Trang kết quả tìm kiếm**
+
+![Trang kết quả GooSearch](img_1.JPG)
+
+---
+
 ## Sơ đồ hoạt động (Workflows)
 
 Hệ thống hoạt động dựa trên hai quy trình chính: **Lập chỉ mục (Offline)** và **Tìm kiếm (Online)**.
