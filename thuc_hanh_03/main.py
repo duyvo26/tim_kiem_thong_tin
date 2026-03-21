@@ -120,7 +120,7 @@ def main():
     print(f"  Thời gian nạp corpus: {time.time() - t0:.1f}s")
 
     if not sentences:
-        print("❌ Không có dữ liệu. Kiểm tra lại thư mục dataset/")
+        print("Lỗi: Không có dữ liệu. Kiểm tra lại thư mục dataset/")
         return
 
     # ── 2. Phương pháp 1: Ma trận đồng xuất hiện ─────────────────────────
@@ -191,9 +191,9 @@ def main():
     
     export_markdown(all_results, OUTPUT_MD)
     
-    print(f"\n✅ Kết quả đã lưu tại (JSON): {OUTPUT_JSON}")
-    print(f"✅ Kết quả đã lưu tại (Markdown): {OUTPUT_MD}")
-    print(f"✅ Word2Vec model đã lưu tại: {model_path}")
+    print(f"\nKết quả đã lưu tại (JSON): {OUTPUT_JSON}")
+    print(f"Kết quả đã lưu tại (Markdown): {OUTPUT_MD}")
+    print(f"Kết quả đã lưu tại: {model_path}")
 
 
 if __name__ == "__main__":

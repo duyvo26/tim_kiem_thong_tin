@@ -157,9 +157,9 @@ def load_corpus_sentences(dataset_dir: str = DATASET_DIR,
             text = read_file(fpath)
             sents = tokenize_sentences(text, stopwords, remove_stopwords)
             all_sentences.extend(sents)
-            print(f"  ✓ {fname}: {len(sents)} câu")
+            print(f"  [OK] {fname}: {len(sents)} câu")
         except Exception as e:
-            print(f"  ✗ {fname}: {e}")
+            print(f"  [Loi] {fname}: {e}")
 
     print(f"\nTổng số câu: {len(all_sentences)}")
     return all_sentences

@@ -4,7 +4,7 @@ Bài tập này triển khai việc tìm kiếm 10 từ đồng xuất hiện ca
 
 ---
 
-## 🏗️ Sơ đồ hoạt động (Workflow)
+## Sơ đồ hoạt động (Workflow)
 
 ```mermaid
 graph TD
@@ -29,7 +29,7 @@ graph TD
 
 ---
 
-## 🛠️ Yêu cầu hệ thống & Cài đặt
+## Yêu cầu hệ thống & Cài đặt
 
 ### 1. Yêu cầu phần mềm
 *   **Python**: Phiên bản 3.9+ 
@@ -45,7 +45,7 @@ graph TD
 
 ---
 
-## 🚀 Hướng dẫn chạy chương trình
+## Hướng dẫn chạy chương trình
 
 Để thực hiện toàn bộ quy trình và xem kết quả, bạn chỉ cần chạy file main:
 
@@ -60,7 +60,7 @@ python main.py
 
 ---
 
-## 📝 Mô tả kỹ thuật
+## Mô tả kỹ thuật
 
 ### Phương pháp 1: Ma trận đồng xuất hiện
 *   **Ma trận A (Binary)**: Mỗi hàng là một từ, mỗi cột là một câu. Giá trị là 1 nếu từ xuất hiện trong câu.
@@ -73,7 +73,7 @@ python main.py
 
 ---
 
-## 📊 Kết quả thử nghiệm
+## Kết quả thử nghiệm
 Chương trình tập trung thử nghiệm với 2 từ khóa chính:
 1.  **window xp**: (Tự động xử lý các biến thể 'windows_xp', 'window_xp'...)
 2.  **phần mềm**: (Xử lý từ ghép tiếng Việt với VnCoreNLP thành 'phần_mềm')
