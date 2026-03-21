@@ -20,6 +20,8 @@ interface ResultsViewProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   hasSearched: boolean;
+  onReindex: () => void;
+  reindexing: boolean;
 }
 
 export const ResultsView: React.FC<ResultsViewProps> = ({
@@ -34,7 +36,9 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   currentPage,
   totalPages,
   onPageChange,
-  hasSearched
+  hasSearched,
+  onReindex,
+  reindexing
 }) => {
   return (
     <div className="min-h-screen bg-white text-[#202124] font-sans flex flex-col">
@@ -57,7 +61,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
         <div className="flex gap-6 mt-4 max-w-[1200px] md:ml-[160px] text-sm text-gray-600">
           <div className="flex items-center gap-1 border-b-2 border-[#1a73e8] pb-2 text-[#1a73e8] cursor-default">
-            <Search size={16} /> All
+            <Search size={16} /> Tất cả kết quả
           </div>
         </div>
       </header>
@@ -67,10 +71,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           {loading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-[#4285F4] border-t-transparent rounded-full animate-spin"></div>
-              Searching...
+              Hệ thống đang tìm kiếm...
             </div>
           ) : (
-            `About ${totalResults} results (${searchTime.toFixed(2)} seconds)`
+            `Tìm thấy khoảng ${totalResults} kết quả trong (${searchTime.toFixed(3)} giây)`
           )}
         </div>
 
@@ -90,7 +94,12 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             ))
           ) : !loading && hasSearched && (
             <div className="py-12">
-              <p className="text-lg">Your search - <b>{query}</b> - did not match any documents.</p>
+              <p className="text-lg">Không tìm thấy tài liệu nào khớp với truy vấn - <b>{query}</b>.</p>
+              <ul className="list-disc ml-8 mt-4 text-gray-600 space-y-1">
+                <li>Hãy chắc chắn bạn viết đúng chính tả các từ khóa.</li>
+                <li>Thử tìm kiếm với các từ khóa khác nhau.</li>
+                <li>Thử rút ngắn hoặc sử dụng từ khóa tổng quát hơn.</li>
+              </ul>
             </div>
           )}
         </div>
@@ -104,7 +113,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         )}
       </main>
 
-      <ResultsFooter />
+      <ResultsFooter onReindex={onReindex} reindexing={reindexing} />
     </div>
   );
 };

@@ -12,6 +12,7 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   query,
+  placeholder = "Tìm kiếm tài liệu...",
   onChange,
   onSearch,
   onClear,
@@ -27,6 +28,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           type="text"
           value={query}
           onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
           className={`flex-grow outline-none ${isLarge ? 'text-lg' : 'text-base'}`}
           autoFocus={isLarge}
         />

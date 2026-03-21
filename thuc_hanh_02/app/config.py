@@ -1,33 +1,24 @@
-# File cấu hình chung cho ứng dụng
-
 import os
 from dotenv import load_dotenv
 
-# Load các biến môi trường từ file .env
 load_dotenv()
 
-
 class Settings:
-    # SETTING
-    DIR_ROOT = os.path.dirname(os.path.abspath(".env"))
+    # BASE
+    DIR_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    # API KEY
-    API_KEY = os.environ["API_KEY"]
-    SECRET_KEY = os.environ["SECRET_KEY"]
+    # API SETTINGS
+    TITLE_APP = os.environ.get("TITLE_APP", "GooSearch API")
+    VERSION_APP = os.environ.get("VERSION_APP", "v1")
+    ALLOW_ORIGINS = os.environ.get("ALLOW_ORIGINS", "*")
     
-    # SECURITY
-    ALLOW_ORIGINS = os.environ["ALLOW_ORIGINS"]
-
-    # TITLE
-    TITLE_APP = os.environ["TITLE_APP"]
-    VERSION_APP = os.environ["VERSION_APP"]
+    # SEARCH ENGINE PATHS
+    DATASET_DIR = os.path.join(DIR_ROOT, "dataset")
+    STORAGE_DIR = DIR_ROOT # Nơi lưu index (.txt)
+    STOPWORDS_PATH = os.path.join(DIR_ROOT, "vietnamese-stopwords.txt")
     
-
-    # DB
-    HOST = os.environ["HOST"]
-    USER = os.environ["USER"]
-    PASSWORD = os.environ["PASSWORD"]
-    DATABASE = os.environ["DATABASE"]
-
+    # VNCORENLP & JAVA
+    VNCORENLP_DIR = os.environ.get("VNCORENLP_DIR", os.path.join(DIR_ROOT, "vncorenlp"))
+    JAVA_HOME = os.environ.get("JAVA_HOME", r"C:\Program Files\Java\jdk1.8.0_202")
 
 settings = Settings()

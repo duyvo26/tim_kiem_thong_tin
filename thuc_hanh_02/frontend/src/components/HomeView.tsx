@@ -8,9 +8,11 @@ interface HomeViewProps {
   query: string;
   setQuery: (val: string) => void;
   handleSearch: (e?: React.FormEvent) => void;
+  onReindex: () => void;
+  reindexing: boolean;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ query, setQuery, handleSearch }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ query, setQuery, handleSearch, onReindex, reindexing }) => {
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#202124] font-sans">
       <header className="h-16" />
@@ -32,7 +34,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ query, setQuery, handleSearc
         </motion.div>
       </main>
 
-      <HomeFooter />
+      <HomeFooter onReindex={onReindex} reindexing={reindexing} />
     </div>
   );
 };
