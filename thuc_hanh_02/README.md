@@ -4,7 +4,7 @@ GooSearch là một hệ thống công cụ tìm kiếm tài liệu (Information
 
 ---
 
-## 🗺️ Sơ đồ hoạt động (Workflows)
+## Sơ đồ hoạt động (Workflows)
 
 Hệ thống hoạt động dựa trên hai quy trình chính: **Lập chỉ mục (Offline)** và **Tìm kiếm (Online)**.
 
@@ -83,7 +83,7 @@ sequenceDiagram
 
 ---
 
-## 🔍 Các kiểu Tìm kiếm & Xếp hạng
+## Các kiểu Tìm kiếm & Xếp hạng
 
 ### 1. Các kiểu Tìm kiếm
 Hệ thống tự động nhận diện kiểu tìm kiếm dựa trên nội dung nhập vào:
@@ -97,7 +97,7 @@ Hệ thống sử dụng tổ hợp các kỹ thuật IR (Information Retrieval)
 
 ---
 
-## 🛠️ Công nghệ sử dụng
+## Công nghệ sử dụng
 
 *   **Backend:** Python 3.10+, FastAPI, `PyVnCoreNLP` (dựa trên Java 8 CLI).
 *   **Frontend:** React 19, Vite, Tailwind CSS, Framer Motion (Hiệu ứng mượt mà).
@@ -105,36 +105,33 @@ Hệ thống sử dụng tổ hợp các kỹ thuật IR (Information Retrieval)
 
 ---
 
-## 🚀 Hướng dẫn cài đặt
+## Hướng dẫn cài đặt
 
 ### 1. Yêu cầu
 - Đã cài đặt Python 3.10 trở lên.
 - Đã cài đặt Node.js và npm.
 - Đã cài đặt Java JDK 8 (Bắt buộc để chạy VnCoreNLP).
 
-### 2. Cài đặt Backend
-1. Cài đặt thư viện:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Chạy server API:
-   ```bash
-   python run_api.py
-   ```
+### 2. Cách chạy nhanh (Windows)
+Bạn có thể sử dụng các file `.bat` để tự động hóa:
+1.  **Cài đặt:** Chạy file `install_all.bat` ở thư mục gốc để tự động cài đặt môi trường ảo Python và các thư viện Node.js.
+2.  **Khởi động:** Chạy file `run_all.bat` để mở cả API và Frontend trong 2 cửa sổ riêng biệt.
 
-### 3. Cài đặt Frontend
-1. Cài đặt thư viện:
-   ```bash
-   cd frontend && npm install
-   ```
-2. Khởi động giao diện:
-   ```bash
-   npm run dev
-   ```
+### 3. Cài đặt thủ công (Tùy chọn)
+**Backend:**
+```bash
+pip install -r requirements.txt
+python run_api.py
+```
+**Frontend:**
+```bash
+cd frontend && npm install
+npm run dev
+```
 
 ---
 
-## 👨‍🎓 Thông tin sinh viên
+## Thông tin sinh viên
 - **Họ tên:** Võ Khương Duy
 - **Mã số sinh viên:** 2513464
 - **Môn học:** Tìm kiếm thông tin - Mô hình Không gian Vector (VSM)
