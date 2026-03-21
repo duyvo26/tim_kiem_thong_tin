@@ -1,53 +1,47 @@
-# GooSearch - Hệ thống Tìm kiếm Thông tin (VSM Model)
+# GooSearch - Simple Web Search Engine
 
-Dự án thực hành tìm kiếm thông tin sử dụng Mô hình Không gian Vector (Vector Space Model - VSM), hỗ trợ tách từ tiếng Việt chuẩn xác và tìm kiếm mệnh đề (Phrase Search).
-
-**Sinh viên thực hiện:** Võ Khương Duy - 2513464
-
----
+GooSearch là một hệ thống công tìm kiếm tài liệu (Web Search Engine) đơn giản được xây dựng dựa trên Mô hình Không gian Vector (Vector Space Model). Dự án này là một phần của bài thực hành "Tìm kiếm thông tin" (Information Retrieval) - Buổi 2.
 
 ## Tính năng chính
 
-- **Lập chỉ mục theo vị trí (Positional Indexing)**: Cho phép tìm kiếm cụm từ chính xác.
-- **Xếp hạng tài liệu (Ranking)**: Sử dụng trọng số TF-IDF và độ đo Cosine Similarity.
-- **Tìm kiếm đa dạng**:
-  - **Chương 1**: Truy vấn từ khóa thông thường (AND logic).
-  - **Chương 2**: Truy vấn dạng mệnh đề (Phrase Search - đặt trong dấu ngoặc kép " ").
-- **Giao diện hiện đại**: Thiết kế theo phong cách GooSearch, chuẩn tối giản, mượt mà.
-- **Tách từ tiếng Việt**: Tích hợp thư viện VnCoreNLP mạnh mẽ.
+### Backend (FastAPI)
+- Lập chỉ mục theo vị trí (Positional Indexing): Lưu trữ vị trí của các từ trong tài liệu để phục vụ tìm kiếm cụm từ (Phrase Search).
+- Trọng số TF-IDF: Tính toán trọng số từ dựa trên tần suất xuất hiện (Term Frequency) và nghịch đảo tần suất tài liệu (Inverse Document Frequency).
+- Độ đo tương đồng Cosine (Cosine Similarity): Xếp hạng tài liệu dựa trên góc giữa vector truy vấn và vector tài liệu.
+- Tách từ Tiếng Việt (Tokenization): Tách từ bằng thư viện VnCoreNLP để xử lý ngôn ngữ Tiếng Việt chính xác.
+- Hỗ trợ đa định dạng: Có thể đọc và lập chỉ mục cho các tệp .pdf, .docx, .html.
 
----
+### Frontend (React + Vite)
+- Giao diện Google-like: Thiết kế tối giản, hiện đại, tích hợp Smooth Animations từ Framer Motion.
+- Phân trang (Pagination): Chỉ hiển thị 10 tài liệu phù hợp nhất trên mỗi trang.
+- Tự động nhận dạng Search Mode:
+  - Nhập từ khóa thông thường: Tìm kiếm từ khóa (Keyword Search).
+  - Nhập cụm từ trong dấu ngoặc kép "..." : Tìm kiếm mệnh đề (Phrase Search) dựa trên vị trí từ.
+- Hộp thoại xác nhận hiện đầu: Thay thế các Alert mặc định bằng Modal đẹp mắt với motion/react.
+- Thông báo Real-time: Sử dụng sonner để hiển thị trạng thái xử lý của hệ thống.
 
-## Cấu trúc dự án
+## Công nghệ sử dụng
 
-- `/app`: Mã nguồn Backend (FastAPI).
-- `/frontend`: Mã nguồn Frontend (React + Vite + TailwindCSS).
-- `/dataset`: Thư mục chứa các tài liệu cần lập chỉ mục (.pdf, .docx, .html).
-- `/vncorenlp`: Chứa model tách từ của VnCoreNLP.
-- `dictionary.txt`, `invertedIndex.txt`: Các tệp lưu trữ chỉ mục sau khi xử lý.
-
----
+- Backend: Python 3.10+, FastAPI, PyVnCoreNLP, Java 8 (cho VnCoreNLP).
+- Frontend: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
+- Dataset: Lưu trữ tại thư mục /dataset.
 
 ## Hướng dẫn cài đặt
 
-### 1. Chuẩn bị môi trường
-- Đã cài đặt **Python 3.10+**.
-- Đã cài đặt **Node.js 18+**.
-- Đã cài đặt **Java (JDK 8 trở lên)** để chạy VnCoreNLP.
+### 1. Yêu cầu hệ thống
+- Đã cài đặt Python 3.10+.
+- Đã cài đặt Node.js và npm.
+- Đã cài đặt Java JDK 8 (để chạy VnCoreNLP).
 
 ### 2. Cài đặt Backend
-1. Tạo môi trường ảo (khuyến nghị):
-   ```bash
-   python -m venv .venv
-   .\.venv\Scripts\activate
-   ```
-2. Cài đặt các thư viện:
+1. Cài đặt các thư viện từ server:
    ```bash
    pip install -r requirements.txt
    ```
-3. Cấu hình file `.env` (nếu cần thiết để trỏ đường dẫn Java):
-   ```env
-   JAVA_HOME="C:\Program Files\Java\jdk1.8.0_202"
+2. Cấu hình đường dẫn Java trong app/config.py hoặc .env.
+3. Chạy server API:
+   ```bash
+   python run_api.py
    ```
 
 ### 3. Cài đặt Frontend
@@ -59,42 +53,22 @@ Dự án thực hành tìm kiếm thông tin sử dụng Mô hình Không gian V
    ```bash
    npm install
    ```
-
----
-
-## Hướng dẫn khởi chạy
-
-### Bước 1: Chạy Backend API
-Từ thư mục gốc dự án:
-```powershell
-.\run_api.py
-```
-*API sẽ chạy tại: `http://localhost:3005`*
-
-### Bước 2: Chạy Frontend (Giao diện)
-Từ thư mục `/frontend`:
-```bash
-npm run dev
-```
-*Truy cập giao diện tại: `http://localhost:3000`*
-
----
+3. Khởi động môi trường phát triển:
+   ```bash
+   npm run dev
+   ```
 
 ## Cách sử dụng
 
-1. **Lập chỉ mục dữ liệu lần đầu**:
-   - Nhấn nút **"Hệ thống: Lập lại chỉ mục"** ở dưới Footer của trang web để hệ thống quét toàn bộ tệp trong thư mục `/dataset`.
-2. **Tìm kiếm thông thường**:
-   - Nhập từ khóa: `windows nâng cấp`
-3. **Tìm kiếm mệnh đề**:
-   - Nhập cụm từ trong ngoặc kép: `"gỡ các chương trình"`
+1. Truy cập: Mở trình duyệt và vào địa chỉ http://localhost:3000.
+2. Lập chỉ mục: Nhấp vào nút "Lập lại chỉ mục toàn bộ tài liệu" ở footer để hệ thống quét và xây dựng bộ chỉ mục từ dataset.
+3. Tìm kiếm từ khóa: Nhập các từ khóa cách nhau bằng khoảng trắng (Ví dụ: startup manager).
+4. Tìm kiếm mệnh đề: Nhập cụm từ trong dấu nháy kép (Ví dụ: "Startup Manager") để tìm chính xác các tài liệu chứa cụm từ này theo đúng thứ tự.
+
+## Thông tin sinh viên
+- Họ tên: Võ Khương Duy
+- Mã số sinh viên: 2513464
+- Môn học: Tìm kiếm thông tin - Mô hình Không gian Vector (VSM)
 
 ---
-
-## Công nghệ sử dụng
-- **Backend**: FastAPI, py-vncorenlp, BeautifulSoup4, pdfminer.six, python-docx.
-- **Frontend**: React 19, Vite, TailwindCSS, Lucide Icons, Sonner (Notifications), Motion (Animations).
-- **Hệ thống**: Java (cho word segmentation).
-
----
-© 2024 - Project thực hành môn Tìm kiếm Thông tin.
+*Dự án được phát triển với mục đích học tập và nghiên cứu các thuật toán IR cơ bản.*
