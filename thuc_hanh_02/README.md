@@ -1,74 +1,143 @@
-# GooSearch - Simple Web Search Engine
+# GooSearch - Hệ thống Tìm kiếm Web Đơn giản
 
-GooSearch là một hệ thống công tìm kiếm tài liệu (Web Search Engine) đơn giản được xây dựng dựa trên Mô hình Không gian Vector (Vector Space Model). Dự án này là một phần của bài thực hành "Tìm kiếm thông tin" (Information Retrieval) - Buổi 2.
+GooSearch là một hệ thống công cụ tìm kiếm tài liệu (Information Retrieval System) được xây dựng dựa trên **Mô hình Không gian Vector (Vector Space Model)**. Dự án tập trung vào việc xử lý tiếng Việt, hỗ trợ tìm kiếm từ khóa thông thường và tìm kiếm mệnh đề chính xác.
 
-## Tính năng chính
+---
 
-### Backend (FastAPI)
-- Lập chỉ mục theo vị trí (Positional Indexing): Lưu trữ vị trí của các từ trong tài liệu để phục vụ tìm kiếm cụm từ (Phrase Search).
-- Trọng số TF-IDF: Tính toán trọng số từ dựa trên tần suất xuất hiện (Term Frequency) và nghịch đảo tần suất tài liệu (Inverse Document Frequency).
-- Độ đo tương đồng Cosine (Cosine Similarity): Xếp hạng tài liệu dựa trên góc giữa vector truy vấn và vector tài liệu.
-- Tách từ Tiếng Việt (Tokenization): Tách từ bằng thư viện VnCoreNLP để xử lý ngôn ngữ Tiếng Việt chính xác.
-- Hỗ trợ đa định dạng: Có thể đọc và lập chỉ mục cho các tệp .pdf, .docx, .html.
+## 🗺️ Sơ đồ hoạt động (Workflows)
 
-### Frontend (React + Vite)
-- Giao diện Google-like: Thiết kế tối giản, hiện đại, tích hợp Smooth Animations từ Framer Motion.
-- Phân trang (Pagination): Chỉ hiển thị 10 tài liệu phù hợp nhất trên mỗi trang.
-- Tự động nhận dạng Search Mode:
-  - Nhập từ khóa thông thường: Tìm kiếm từ khóa (Keyword Search).
-  - Nhập cụm từ trong dấu ngoặc kép "..." : Tìm kiếm mệnh đề (Phrase Search) dựa trên vị trí từ.
-- Hộp thoại xác nhận hiện đầu: Thay thế các Alert mặc định bằng Modal đẹp mắt với motion/react.
-- Thông báo Real-time: Sử dụng sonner để hiển thị trạng thái xử lý của hệ thống.
+Hệ thống hoạt động dựa trên hai quy trình chính: **Lập chỉ mục (Offline)** và **Tìm kiếm (Online)**.
 
-## Công nghệ sử dụng
+### 1. Quy trình Lập chỉ mục (Indexing Process)
+Quy trình này quét toàn bộ dữ liệu thô và chuyển đổi thành cấu trúc dữ liệu tối ưu cho việc tìm kiếm.
 
-- Backend: Python 3.10+, FastAPI, PyVnCoreNLP, Java 8 (cho VnCoreNLP).
-- Frontend: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
-- Dataset: Lưu trữ tại thư mục /dataset.
+```mermaid
+graph TD
+    A[Bắt đầu Reindex] --> B[Quét thư mục /dataset]
+    B --> C{Định dạng?}
+    C -- .docx/.pdf/.html --> D[Trích xuất văn bản thô]
+    D --> E[Tách từ Tiếng Việt - VnCoreNLP]
+    E --> F[Loại bỏ Stopwords]
+    F --> G[Xây dựng Inverted Index & Positional Index]
+    G --> H[Tính trọng số TF-IDF cho từng Term]
+    H --> I[Lưu dictionary.txt, invertedIndex.txt, docLengths.txt]
+    I --> J[Kết thúc - Sẵn sàng tìm kiếm]
+    
+    style G fill:#f9f,stroke:#333,stroke-width:2px
+    style H fill:#bbf,stroke:#333,stroke-width:2px
+```
 
-## Hướng dẫn cài đặt
+### 2. Quy trình Tìm kiếm & Xếp hạng (Search & Ranking)
+Quy trình xử lý truy vấn từ người dùng và trả về kết quả đã được sắp xếp.
 
-### 1. Yêu cầu hệ thống
-- Đã cài đặt Python 3.10+.
+```mermaid
+graph TD
+    StartInput[Nhập Query từ Frontend] --> Preprocess[Tách từ & Loại bỏ Stopwords]
+    Preprocess --> TypeDetect{Loại tìm kiếm?}
+    
+    TypeDetect -- "Keyword (Mặc định)" --> GetCandidates[Lấy tập tài liệu chứa TẤT CẢ từ khóa]
+    TypeDetect -- "Phrase (Dùng dấu ngoặc kép)" --> GetPhrase[Kiểm tra vị trí liên tiếp - Positional Index]
+    
+    GetCandidates --> CalcScore[Tính điểm tương đồng Cosine + TF-IDF]
+    GetPhrase --> CalcScore
+    
+    CalcScore --> SortResults[Sắp xếp theo Score giảm dần]
+    SortResults --> Render[Hiển thị kết quả lên Giao diện]
+
+    style TypeDetect fill:#fff4dd,stroke:#d4a017,stroke-width:2px
+    style CalcScore fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+```
+
+### 3. Sơ đồ trình tự Tìm kiếm (Search Sequence Diagram)
+Sơ đồ này mô tả cách các thành phần giao tiếp với nhau khi người dùng thực hiện tìm kiếm.
+
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant FE as Frontend (React)
+    participant API as Backend (FastAPI)
+    participant SVC as Search Service
+    participant IDX as Inverted Index Files
+
+    User->>FE: Nhập từ khóa & Nhấn Enter
+    FE->>API: Gọi GET /api/v1/search?q=...
+    API->>SVC: Gọi hàm search_service.search(query)
+    SVC->>SVC: Tách từ (VnCoreNLP) & Lọc Stopwords
+    SVC->>IDX: Đọc dictionary.txt & invertedIndex.txt
+    IDX-->>SVC: Trả về danh sách Postings & Vị trí
+    SVC->>SVC: Lọc ứng viên (AND logic / Phrase logic)
+    SVC->>SVC: Tính TF-IDF & Cosine Similarity
+    SVC->>SVC: Sắp xếp kết quả (Rank)
+    SVC-->>API: Trả về danh sách kết quả (JSON)
+    API-->>FE: Trả về HTTP 200 (Results)
+    FE-->>User: Hiển thị danh sách kết quả xếp hạng
+```
+
+### 4. Các bước xử lý trong Search Logic
+1.  **Tiền xử lý Truy vấn:** Chuyển câu hỏi của người dùng về dạng token chuẩn (ví dụ: `Hệ thống` -> `hệ_thống`) bằng VnCoreNLP.
+2.  **Truy xuất Ứng viên (Retrieval):** Tìm tập hợp các tài liệu chứa từ khóa. Hệ thống thực hiện phép giao (Intersection) giữa các danh sách Postings.
+3.  **Hậu lọc (Filtering):** Nếu là tìm kiếm cụm từ (Phrase Search), hệ thống dựa vào **Positional Index** để lọc ra các tài liệu có từ đứng cạnh nhau theo đúng thứ tự.
+4.  **Tính toán Trọng số (Weighting):** Sử dụng công thức **TF-IDF** để định giá trị cho từng từ trong câu hỏi và tài liệu.
+5.  **Tính điểm Tương đồng (Similarity):** Thực hiện phép nhân vô hướng giữa vector truy vấn và vector tài liệu, chia cho tích độ dài để tính **Cosine Similarity**.
+6.  **Sắp xếp & Phân trang:** Trả về danh sách kết quả giảm dần theo điểm số để hiển thị lên màn hình (mặc định 10 kết quả mỗi trang).
+
+---
+
+## 🔍 Các kiểu Tìm kiếm & Xếp hạng
+
+### 1. Các kiểu Tìm kiếm
+Hệ thống tự động nhận diện kiểu tìm kiếm dựa trên nội dung nhập vào:
+*   **Tìm kiếm Từ khóa (Keyword Search):** Tìm các tài liệu chứa đồng thời các từ khóa (logic AND), không quan trọng thứ tự. Ví dụ: `máy tính xách tay`.
+*   **Tìm kiếm Mệnh đề (Phrase Search):** Tìm chính xác cụm từ theo đúng thứ tự và vị trí đứng cạnh nhau. Kích hoạt bằng cách để nội dung trong dấu ngoặc kép. Ví dụ: `"máy tính xách tay"`.
+
+### 2. Thuật toán Xếp hạng (Ranking)
+Hệ thống sử dụng tổ hợp các kỹ thuật IR (Information Retrieval) kinh điển:
+*   **TF-IDF (Term Frequency - Inverse Document Frequency):** Đánh giá mức độ quan trọng của một từ trong tài liệu. Từ nào xuất hiện nhiều trong một bài nhưng hiếm trong toàn bộ kho dữ liệu sẽ có trọng số cao.
+*   **Cosine Similarity:** Đo lường độ tương đồng giữa vector câu hỏi và vector tài liệu. Tài liệu nào có "hướng" gần với câu hỏi nhất sẽ được ưu tiên lên đầu.
+
+---
+
+## 🛠️ Công nghệ sử dụng
+
+*   **Backend:** Python 3.10+, FastAPI, `PyVnCoreNLP` (dựa trên Java 8 CLI).
+*   **Frontend:** React 19, Vite, Tailwind CSS, Framer Motion (Hiệu ứng mượt mà).
+*   **Chỉ mục:** Inverted Index (Lập chỉ mục ngược) dạng file văn bản (.txt).
+
+---
+
+## 🚀 Hướng dẫn cài đặt
+
+### 1. Yêu cầu
+- Đã cài đặt Python 3.10 trở lên.
 - Đã cài đặt Node.js và npm.
-- Đã cài đặt Java JDK 8 (để chạy VnCoreNLP).
+- Đã cài đặt Java JDK 8 (Bắt buộc để chạy VnCoreNLP).
 
 ### 2. Cài đặt Backend
-1. Cài đặt các thư viện từ server:
+1. Cài đặt thư viện:
    ```bash
    pip install -r requirements.txt
    ```
-2. Cấu hình đường dẫn Java trong app/config.py hoặc .env.
-3. Chạy server API:
+2. Chạy server API:
    ```bash
    python run_api.py
    ```
 
 ### 3. Cài đặt Frontend
-1. Di chuyển vào thư mục frontend:
+1. Cài đặt thư viện:
    ```bash
-   cd frontend
+   cd frontend && npm install
    ```
-2. Cài đặt dependencies:
-   ```bash
-   npm install
-   ```
-3. Khởi động môi trường phát triển:
+2. Khởi động giao diện:
    ```bash
    npm run dev
    ```
 
-## Cách sử dụng
+---
 
-1. Truy cập: Mở trình duyệt và vào địa chỉ http://localhost:3000.
-2. Lập chỉ mục: Nhấp vào nút "Lập lại chỉ mục toàn bộ tài liệu" ở footer để hệ thống quét và xây dựng bộ chỉ mục từ dataset.
-3. Tìm kiếm từ khóa: Nhập các từ khóa cách nhau bằng khoảng trắng (Ví dụ: startup manager).
-4. Tìm kiếm mệnh đề: Nhập cụm từ trong dấu nháy kép (Ví dụ: "Startup Manager") để tìm chính xác các tài liệu chứa cụm từ này theo đúng thứ tự.
-
-## Thông tin sinh viên
-- Họ tên: Võ Khương Duy
-- Mã số sinh viên: 2513464
-- Môn học: Tìm kiếm thông tin - Mô hình Không gian Vector (VSM)
+## 👨‍🎓 Thông tin sinh viên
+- **Họ tên:** Võ Khương Duy
+- **Mã số sinh viên:** 2513464
+- **Môn học:** Tìm kiếm thông tin - Mô hình Không gian Vector (VSM)
 
 ---
-*Dự án được phát triển với mục đích học tập và nghiên cứu các thuật toán IR cơ bản.*
+*Dự án thực hành Buổi 2 - Thạc sĩ Tìm kiếm thông tin.*
