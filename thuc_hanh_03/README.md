@@ -8,23 +8,30 @@ Bài tập này triển khai việc tìm kiếm 10 từ đồng xuất hiện ca
 
 ```mermaid
 graph TD
-    A[Dữ liệu thô - Dataset] --> B[Tiền xử lý & Tokenize với VnCoreNLP]
-    B --> C[Lọc bỏ Stopwords]
-    C --> D[Tách thành danh sách các Câu]
+    A[Dữ liệu thô - Dataset] --> B{AI Language Detect}
     
-    D --> E1[Phương pháp 1: Ma trận Co-occurrence]
-    D --> E2[Phương pháp 2: Word2Vec CBOW]
+    B -- Tiếng Anh / Mã code / IT --> C[Tự động nối dính từ khóa nguyên khối]
+    B -- Tiếng Việt thuần --> D[Tiền xử lý & Tokenize bằng VnCoreNLP]
+    C --> D
     
-    E1 --> F1[Xây dựng ma trận Từ - Câu A]
-    F1 --> G1[Tính C = A * A^T]
-    G1 --> H1[Trích xuất Top 10 Co-occurrence]
+    D --> E[Lọc bỏ Stopwords]
+    E --> F[Tách thành danh sách Câu & Các Từ]
     
-    E2 --> F2[Huấn luyện model CBOW window=3]
-    F2 --> G2[Tính Cosine Similarity]
-    G2 --> H2[Trích xuất Top 10 Semantic Similarity]
+    F --> G1[Phương pháp 1: Ma trận Co-occurrence]
+    F --> G2[Phương pháp 2: Word2Vec CBOW]
     
-    H1 --> I[Xuất báo cáo JSON/Markdown]
-    H2 --> I
+    G1 --> H1[Xây dựng ma trận Từ - Câu A]
+    H1 --> I1[Tính C = A * A^T]
+    I1 --> J1[Trích xuất Top 10 Co-occurrence]
+    
+    G2 --> H2[Huấn luyện model CBOW window=3]
+    H2 --> I2[Tính Cosine Similarity]
+    I2 --> J2[Trích xuất Top 10 Semantic Similarity]
+    
+    J1 --> K[Xuất báo cáo JSON/Markdown]
+    J2 --> K
+    
+    style B fill:#f9f,stroke:#333,stroke-width:2px;
 ```
 
 ---

@@ -26,7 +26,7 @@ class WordEmbeddingModel:
                  window: int = 3,
                  min_count: int = 1,
                  workers: int = 4,
-                 epochs: int = 5000):
+                 epochs: int = 100):
         self.vector_size = vector_size
         self.window      = window
         self.min_count   = min_count

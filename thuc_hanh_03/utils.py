@@ -116,7 +116,7 @@ def tokenize_sentences(text: str, stopwords: set, remove_stopwords: bool = False
             tokens = []
             for w in sent:
                 word = str(w.get("wordForm", "")).lower().strip()
-                if not word:
+                if not word or word == '_':
                     continue
                 # Chỉ giữ token có chữ cái / số / gạch dưới (loại bỏ dấu câu)
                 if not re.match(r"^[\w\u00C0-\u1EF9]+$", word):

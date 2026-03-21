@@ -18,31 +18,17 @@ import os
 import json
 import time
 
-from utils import load_corpus_sentences, DIR_ROOT
+from utils import load_corpus_sentences, DIR_ROOT, tokenize_sentences
 from cooccurrence import CoOccurrenceModel
 from word_embedding import WordEmbeddingModel
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Cấu hình
 # ─────────────────────────────────────────────────────────────────────────────
 TOPN = 10
 
-# Các từ cần thử nghiệm theo đề bài
-TEST_WORDS = [
-    "windows_xp",   # VnCoreNLP thường ghép thành token có gạch dưới
-    "windows",      # token riêng lẻ (phòng khi không ghép)
-    "xp",           # token riêng lẻ
-    "phần_mềm",     # VnCoreNLP thường ghép thành phần_mềm
-    "phần",         # fallback
-    "mềm",          # fallback
+# Từ truy vấn chính gốc chưa qua xử lý
+RAW_QUERIES = [
+    "window xp",
+    "phần mềm",
 ]
-
-# Từ truy vấn chính cho báo cáo kết quả
-REPORT_QUERIES = {
-    "window xp": ["windows_xp", "windows xp", "xp", "windows"],
-    "phần mềm":  ["phần_mềm",  "phần mềm"],
-}
 
 OUTPUT_JSON = os.path.join(DIR_ROOT, "results.json")
 OUTPUT_MD   = os.path.join(DIR_ROOT, "results.md")
@@ -56,7 +42,6 @@ def print_header(title: str):
     print(f"  {title}")
     print("=" * 60)
 
-
 def print_result(label: str, word: str, results: list[tuple[str, float]]):
     print(f"\n  [{label}] Top-{TOPN} từ đồng xuất hiện của '{word}':")
     if not results:
@@ -66,15 +51,16 @@ def print_result(label: str, word: str, results: list[tuple[str, float]]):
             print(f"    {rank:>2}. {w:<25} score = {score:.4f}")
 
 
-def find_best_result(model_obj, queries: list[str], method_name: str) -> tuple[str, list]:
+def find_best_result(model_obj, query: str, method_name: str) -> tuple[str, list]:
     """
-    Thử lần lượt các dạng từ trong `queries`, trả kết quả đầu tiên thấy.
+    Tìm trực tiếp từ khóa (token) đầu tiên được quét ra bởi bộ tokenizer.
+    Không tìm được -> Dừng luôn (Trả về rỗng). Không cố tình tìm các từ đằng sau (Fallback).
     """
-    for q in queries:
-        res = model_obj.most_similar(q, topn=TOPN)
-        if res:
-            return q, res
-    return queries[0], []
+    res = model_obj.most_similar(query, topn=TOPN)
+    if res:
+        return query, res
+
+    return query, []
 
 
 def export_markdown(all_results: dict, output_path: str):
@@ -144,48 +130,41 @@ def main():
     # ── 4. Kết quả thử nghiệm ─────────────────────────────────────────────
     print_header("Kết quả thử nghiệm")
 
+    
     all_results = {}
 
-    for query_label, query_variants in REPORT_QUERIES.items():
+    for query_label in RAW_QUERIES:
+        # Dùng VnCoreNLP để động nhận dạng/ghép chữ
+        sents = tokenize_sentences(query_label, stopwords=set(), remove_stopwords=False)
+        query_variants = [w for sent in sents for w in sent]
+        
+        # Dùng từ khóa đại diện đầu tiên. Cắt cái trò tìm không được rồi nhảy sang từ thứ 2.
+        core_query = query_variants[0] if query_variants else query_label
+
         print(f"\n{'─' * 55}")
-        print(f"  Từ truy vấn: '{query_label}'")
+        print(f"  Từ truy vấn gốc: '{query_label}'")
+        print(f"  VnCoreNLP tokenize thành: {query_variants}")
         print(f"{'─' * 55}")
 
         # Method 1
-        found_word_m1, res_m1 = find_best_result(co_model,  query_variants, "M1")
+        found_word_m1, res_m1 = find_best_result(co_model, core_query, "M1")
         print_result("Ma trận C", found_word_m1, res_m1)
 
         # Method 2
-        found_word_m2, res_m2 = find_best_result(w2v_model, query_variants, "M2")
+        found_word_m2, res_m2 = find_best_result(w2v_model, core_query, "M2")
         print_result("Word2Vec ", found_word_m2, res_m2)
 
         all_results[query_label] = {
             "method1_cooccurrence": {
                 "searched_as": found_word_m1,
-                "results": [(w, round(s, 4)) for w, s in res_m1],
+                "results": [(w, round(float(s), 4)) for w, s in res_m1],
             },
             "method2_word2vec": {
                 "searched_as": found_word_m2,
-                "results": [(w, round(s, 4)) for w, s in res_m2],
+                "results": [(w, round(float(s), 4)) for w, s in res_m2],
             },
         }
-
-    # ── 5. So sánh 2 phương pháp ──────────────────────────────────────────
-    print_header("So sánh 2 phương pháp")
-    print("""
-  ┌─────────────────┬─────────────────────────┬──────────────────────────────┐
-  │ Tiêu chí        │ Phương pháp 1 (Ma trận) │ Phương pháp 2 (Word2Vec)     │
-  ├─────────────────┼─────────────────────────┼──────────────────────────────┤
-  │ Loại mối quan hệ│ Đồng xuất hiện thực tế  │ Tương đồng ngữ nghĩa         │
-  │ Ý nghĩa score   │ Số câu cùng xuất hiện   │ Cosine similarity embedding  │
-  │ Tốc độ build    │ Nhanh (phép nhân ma trận│ Chậm hơn (neural training)   │
-  │ Bộ nhớ           │ Lớn O(V²)              │ Nhỏ O(V×d)                   │
-  │ Yêu cầu dữ liệu │ Corpus nhỏ cũng được    │ Cần nhiều dữ liệu hơn        │
-  │ Ứng dụng        │ Thống kê từ cùng ngữ cảnh│ Hiểu ngữ nghĩa từ           │
-  └─────────────────┴─────────────────────────┴──────────────────────────────┘
-    """)
-
-    # ── 6. Lưu kết quả ────────────────────────────────────────────────────
+    # ── 5. Lưu kết quả ────────────────────────────────────────────────────
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(all_results, f, ensure_ascii=False, indent=2)
     

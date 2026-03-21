@@ -1,94 +1,12 @@
 {
   "window xp": {
     "method1_cooccurrence": {
-      "searched_as": "windows_xp",
-      "results": [
-        [
-          "hỗ_trợ",
-          11.0
-        ],
-        [
-          "microsoft",
-          10.0
-        ],
-        [
-          "hệ_điều_hành",
-          8.0
-        ],
-        [
-          "kết_thúc",
-          4.0
-        ],
-        [
-          "ngừng",
-          4.0
-        ],
-        [
-          "máy_tính",
-          4.0
-        ],
-        [
-          "chấm_dứt",
-          3.0
-        ],
-        [
-          "windows",
-          3.0
-        ],
-        [
-          "vòng",
-          3.0
-        ],
-        [
-          "đời",
-          3.0
-        ]
-      ]
+      "searched_as": "window",
+      "results": []
     },
     "method2_word2vec": {
-      "searched_as": "windows_xp",
-      "results": [
-        [
-          "kế_tiếp",
-          0.7643
-        ],
-        [
-          "hỗ_trợ",
-          0.7368
-        ],
-        [
-          "hệ_điều_hành",
-          0.704
-        ],
-        [
-          "33",
-          0.6887
-        ],
-        [
-          "toàn_cầu",
-          0.6805
-        ],
-        [
-          "kênh",
-          0.6759
-        ],
-        [
-          "máy_tính",
-          0.6535
-        ],
-        [
-          "4",
-          0.6478
-        ],
-        [
-          "nhường",
-          0.6393
-        ],
-        [
-          "nhà_sản_xuất",
-          0.6376
-        ]
-      ]
+      "searched_as": "window",
+      "results": []
     }
   },
   "phần mềm": {
@@ -141,44 +59,44 @@
       "searched_as": "phần_mềm",
       "results": [
         [
+          "loại_bỏ",
+          0.9878
+        ],
+        [
           "quá_trình",
-          0.8471
+          0.981
         ],
         [
-          "hệ_thống",
-          0.828
-        ],
-        [
-          "rác",
-          0.8095
+          "liệt_kê",
+          0.9761
         ],
         [
           "đầy_đủ",
-          0.7826
+          0.9745
         ],
         [
-          "chức_năng",
-          0.7771
+          "hệ_thống",
+          0.9706
         ],
         [
-          "khởi_động",
-          0.7336
+          "cần_thiết",
+          0.9684
         ],
         [
-          "file",
-          0.7109
-        ],
-        [
-          "sót",
-          0.7019
-        ],
-        [
-          "trở_nên",
-          0.7003
+          "thực_hiện",
+          0.9672
         ],
         [
           "cho_phép",
-          0.697
+          0.967
+        ],
+        [
+          "chức_năng",
+          0.9635
+        ],
+        [
+          "windows_temporary_files",
+          0.9617
         ]
       ]
     }
