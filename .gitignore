@@ -43,4 +43,3 @@ pytest_cache/
 # /vncorenlp/
 desktop.ini
 *.zip
-/thuc_hanh_*

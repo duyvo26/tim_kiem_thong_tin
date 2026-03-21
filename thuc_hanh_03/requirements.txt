@@ -1,0 +1,7 @@
+py_vncorenlp==0.1.4
+python-docx==1.2.0
+pdfminer.six==20260107
+beautifulsoup4==4.14.3
+numpy==1.26.4
+scipy==1.11.4
+gensim==4.3.3
