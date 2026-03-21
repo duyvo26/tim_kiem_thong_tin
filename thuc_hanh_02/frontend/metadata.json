@@ -1,0 +1,5 @@
+{
+  "name": "GooSearch - Simple Search Engine",
+  "description": "A simple search engine interface inspired by Google, powered by Gemini to provide relevant search results.",
+  "requestFramePermissions": []
+}
