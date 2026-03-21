@@ -21,7 +21,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const isLarge = variant === 'large';
 
   return (
-    <form onSubmit={onSearch} className="w-full group">
+    <form onSubmit={onSearch} className="w-full">
       <div className={`relative flex items-center w-full border border-[#dfe1e5] rounded-full px-5 hover:shadow-md focus-within:shadow-md transition-shadow group-focus-within:border-transparent ${isLarge ? 'py-3' : 'py-2'}`}>
         {isLarge && <Search size={20} className="text-gray-400 mr-3" />}
         <input

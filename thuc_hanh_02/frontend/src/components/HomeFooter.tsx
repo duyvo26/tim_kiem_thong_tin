@@ -16,13 +16,13 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ onReindex, reindexing })
             disabled={reindexing}
             className={`hover:underline cursor-pointer font-medium transition-colors ${reindexing ? 'text-blue-600 animate-pulse' : 'text-[#1a73e8]'}`}
           >
-            {reindexing ? 'Đang cập nhật chỉ mục...' : 'Hệ thống: Lập lại chỉ mục dữ liệu'}
+            {reindexing ? 'Đang cập nhật chỉ mục...' : 'Lập lại chỉ mục toàn bộ tài liệu'}
           </button>
         </div>
         <div className="flex gap-4 items-center">
           <span className="font-medium text-[#202124]">Võ Khương Duy - 2513464</span>
           <span className="text-gray-300">|</span>
-          <span className="italic text-xs">GooSearch Core Engine</span>
+          <span className="italic text-xs text-gray-500">Mô hình Không gian Vector (VSM)</span>
         </div>
       </div>
     </footer>

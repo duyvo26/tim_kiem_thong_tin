@@ -29,8 +29,8 @@ export const ResultItem: React.FC<ResultItemProps> = ({ result, index }) => {
             <Search size={14} className="text-gray-400" />
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="text-[#202124] text-sm truncate">{hostname}</span>
-            <span className="text-[#70757a] text-xs truncate">{result.url}</span>
+            <span className="text-[#202124] text-sm font-normal">localhost</span>
+            <span className="text-[#70757a] text-xs truncate leading-tight focus:outline-none">{result.url}</span>
           </div>
           <button className="ml-auto p-1 text-gray-400 hover:text-gray-600">
             <MoreVertical size={16} />

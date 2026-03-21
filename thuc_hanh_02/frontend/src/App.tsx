@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { HomeView } from './components/HomeView';
 import { ResultsView } from './components/ResultsView';
+import { ConfirmationModal } from './components/ConfirmationModal';
 import { SearchResult } from './types';
 
 const RESULTS_PER_PAGE = 10;
@@ -18,6 +19,7 @@ export default function App() {
   const [searchTime, setSearchTime] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [reindexing, setReindexing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Sync state with URL params
   const urlQuery = searchParams.get('q');
@@ -33,10 +35,10 @@ export default function App() {
 
   const handleReindex = async () => {
     if (reindexing) return;
-    
-    const confirmed = window.confirm("Bạn có chắc chắn muốn lập lại toàn bộ chỉ mục? Quá trình này sẽ mất một vài giây để quét lại toàn bộ dữ liệu.");
-    if (!confirmed) return;
+    setIsModalOpen(true);
+  };
 
+  const confirmReindex = async () => {
     setReindexing(true);
     
     toast.promise(
@@ -60,20 +62,21 @@ export default function App() {
     const startTime = performance.now();
 
     try {
-      let searchType = "keyword";
+      let searchTypeParam = "keyword";
       let cleanQuery = searchTerm.trim();
+      // Auto-detect if user explicitly uses quotes for phrase search
       if (cleanQuery.startsWith('"') && cleanQuery.endsWith('"') && cleanQuery.length > 2) {
-        searchType = "phrase";
+        searchTypeParam = "phrase";
         cleanQuery = cleanQuery.substring(1, cleanQuery.length - 1);
       }
 
-      const response = await fetch(`http://localhost:3005/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=${searchType}`);
+      const response = await fetch(`http://localhost:3005/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=${searchTypeParam}`);
       const data = await response.json();
       
       const mappedResults: SearchResult[] = (data.results || []).map((item: any) => ({
         title: item.doc_id,
         url: `http://localhost:3005/dataset/${item.doc_id}`,
-        snippet: `Điểm số: ${item.score.toFixed(4)}. Tìm thấy bằng phương pháp ${searchType === 'phrase' ? 'Tìm kiếm mệnh đề' : 'Tìm kiếm từ khóa'}.`
+        snippet: `Điểm số: ${item.score.toFixed(4)}. Tìm thấy bằng phương pháp ${data.type === 'phrase' ? 'Tìm kiếm mệnh đề' : 'Tìm kiếm từ khóa'}.`
       }));
 
       setResults(mappedResults);
@@ -110,32 +113,52 @@ export default function App() {
 
   if (!hasSearched && !urlQuery) {
     return (
-      <HomeView 
-        query={query} 
-        setQuery={setQuery} 
-        handleSearch={handleSearch} 
-        onReindex={handleReindex}
-        reindexing={reindexing}
-      />
+      <>
+        <HomeView 
+          query={query} 
+          setQuery={setQuery} 
+          handleSearch={handleSearch} 
+          onReindex={handleReindex}
+          reindexing={reindexing}
+        />
+        {/* Modern Confirmation Modal */}
+        <ConfirmationModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={confirmReindex}
+          title="Xác nhận Lập lại chỉ mục"
+          message="Bạn có chắc chắn muốn lập lại toàn bộ chỉ mục? Quá trình này sẽ quét lại toàn bộ tài liệu trong dataset để cập nhật chỉ mục mới."
+        />
+      </>
     );
   }
 
   return (
-    <ResultsView
-      query={query}
-      setQuery={setQuery}
-      handleSearch={handleSearch}
-      resetSearch={resetSearch}
-      loading={loading}
-      searchTime={searchTime}
-      totalResults={results.length}
-      results={paginatedResults}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={setCurrentPage}
-      hasSearched={hasSearched}
-      onReindex={handleReindex}
-      reindexing={reindexing}
-    />
+    <>
+      <ResultsView
+        query={query}
+        setQuery={setQuery}
+        handleSearch={handleSearch}
+        resetSearch={resetSearch}
+        loading={loading}
+        searchTime={searchTime}
+        totalResults={results.length}
+        results={paginatedResults}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        hasSearched={hasSearched}
+        onReindex={handleReindex}
+        reindexing={reindexing}
+      />
+      {/* Modern Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmReindex}
+        title="Xác nhận Lập lại chỉ mục"
+        message="Bạn có chắc chắn muốn lập lại toàn bộ chỉ mục? Quá trình này sẽ quét lại toàn bộ tài liệu trong dataset để cập nhật chỉ mục mới."
+      />
+    </>
   );
 }

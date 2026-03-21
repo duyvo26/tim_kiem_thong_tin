@@ -15,11 +15,12 @@ export const ResultsFooter: React.FC<ResultsFooterProps> = ({ onReindex, reindex
             disabled={reindexing}
             className={`hover:underline cursor-pointer font-medium transition-colors ${reindexing ? 'animate-pulse text-blue-600' : 'text-[#1a73e8]'}`}
           >
-            {reindexing ? 'Đang lập lại chỉ mục...' : 'Hệ thống: Lập lại chỉ mục toàn bộ tài liệu'}
+            {reindexing ? 'Đang lập lại chỉ mục...' : 'Lập lại chỉ mục toàn bộ tài liệu'}
           </button>
           <div className="md:ml-auto flex items-center gap-4">
              <span className="font-medium text-[#202124]">Võ Khương Duy - 2513464</span>
-             <span className="hidden md:inline text-gray-400 italic text-xs">
+             <span className="text-gray-400">|</span>
+             <span className="italic text-xs text-gray-500">
               Mô hình Không gian Vector (VSM)
             </span>
           </div>

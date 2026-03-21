@@ -12,7 +12,13 @@ interface HomeViewProps {
   reindexing: boolean;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ query, setQuery, handleSearch, onReindex, reindexing }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ 
+  query, 
+  setQuery, 
+  handleSearch, 
+  onReindex, 
+  reindexing 
+}) => {
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#202124] font-sans">
       <header className="h-16" />

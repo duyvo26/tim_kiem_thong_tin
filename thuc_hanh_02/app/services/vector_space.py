@@ -8,6 +8,7 @@ from pdfminer.high_level import extract_text
 import re
 from typing import List, Dict, Set, Any
 from app.config import settings
+from app.services.ranking import RankingCalculator
 
 class VectorSpaceService:
     def __init__(self, dataset_dir: str, storage_dir: str, stopwords_path: str, vncorenlp_dir: str, java_home: str):
@@ -135,7 +136,7 @@ class VectorSpaceService:
                 for d_id, positions in postings.items():
                     tf = len(positions)
                     p_strs.append(f"{d_id}:{tf}:{','.join(map(str, positions))}")
-                    w_d = (1.0 + math.log10(tf)) * idf
+                    w_d = RankingCalculator.calculate_tfidf(tf, idf)
                     doc_vector_sums[d_id] = doc_vector_sums.get(d_id, 0.0) + (w_d * w_d)
                 
                 line = f"{idf:.5f}\t" + " ".join(p_strs) + "\n"
@@ -189,7 +190,7 @@ class VectorSpaceService:
             for t, tf in q_tf.items():
                 if t in self.dictionary:
                     idf = self._get_idf_file(t)
-                    w_q = (1.0 + math.log10(tf)) * idf
+                    w_q = RankingCalculator.calculate_tfidf(tf, idf)
                     q_weights[t] = w_q
                     q_norm_sq += (w_q * w_q)
             
@@ -215,7 +216,7 @@ class VectorSpaceService:
                             # IMPORTANT: Only calculate for candidates
                             if d_id in candidates:
                                 tf_d = int(bits[1])
-                                w_d = (1.0 + math.log10(tf_d)) * idf_d
+                                w_d = RankingCalculator.calculate_tfidf(tf_d, idf_d)
                                 doc_scores[d_id] = doc_scores.get(d_id, 0.0) + (w_q * w_d)
 
             results = []
