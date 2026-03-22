@@ -114,10 +114,15 @@ class Module2_ContextChecker:
         
     def _build_lm(self, corpus):
         """
-        Xay dung mo hinh ngon ngu Trigram tu tap corpus va tinh toan Threshold.
+        Xay dung mo hinh ngon ngu Trigram tu tap cau chuan (corpus) va tinh toan Threshold.
+        
+        Nguong (Threshold) duoc xac dinh truc tiep tu tập du lieu van ban thong qua 
+        cac chi so thong ke (Mean va Standard Deviation) cua toan bo cau trong corpus. 
+        Phuong phap nay coi cac cau co LogProb thap hon (Mean - 2.5 * Std) la cac 'outliers' 
+        (diem bat thuong), dau hieu cua viec sai ngu canh hoac dung tu khong tu nhien.
         
         Args:
-            corpus (list): Danh sach cac cau chuan de huan luyen.
+            corpus (list): Danh sach cac cau van ban chuẩn de huan luyen.
         """
         log_probs = []
         for sentence in corpus:
