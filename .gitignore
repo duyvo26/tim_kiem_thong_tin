@@ -44,3 +44,4 @@ pytest_cache/
 desktop.ini
 *.zip
 ~$i*
+thuc_hanh_04/trigram_lm.pkl
