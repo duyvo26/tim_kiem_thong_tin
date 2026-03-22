@@ -200,7 +200,7 @@ def main():
     print("HỆ THỐNG TÌM KIẾM NHANH - CLUSTER PRUNING")
     print("="*50)
 
-    queries = ["Ốc gạo Phú Đa", "PGS Văn Như Cương"]
+    queries = ["lương cơ sở tăng 8% so với","Ốc gạo Phú Đa", "PGS Văn Như Cương", "Windows XP", "Advanced Uninstall Pro cung cấp"]
     search_history = []
 
     for q in queries:
