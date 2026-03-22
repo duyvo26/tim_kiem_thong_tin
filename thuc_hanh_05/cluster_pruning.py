@@ -218,7 +218,7 @@ def main():
         with open(REPORT_PATH, "w", encoding="utf-8") as f:
             f.write("# BÁO CÁO TÌM KIẾM - CLUSTER PRUNING\n\n")
             f.write(f"- Số cụm mỗi tài liệu thuộc về (TOP\\_K): `{TOP_K}`\n")
-            f.write(f"- Số leaders được chọn (sqrt(N)): `{len(indexer.leaders)}`\n\n")
+            f.write(f"- Số tài liệu |D|: `{len(vmodel.doc_names)}`  →  Số leaders = √|D| = `{len(indexer.leaders)}`\n\n")
             for q, res, top_leaders, num_candidates in search_history:
                 f.write(f"### Truy vấn: `{q}`\n\n")
                 f.write(f"- **{TOP_K} leaders gần nhất:** ")
