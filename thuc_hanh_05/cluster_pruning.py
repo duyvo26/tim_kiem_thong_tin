@@ -5,6 +5,11 @@ import pickle
 from gensim import corpora, models
 import utils
 
+# ─────────────────────────────────────────────
+# Tham số toàn cục cho thuật toán Cluster Pruning
+# ─────────────────────────────────────────────
+TOP_K = 2  # Số cụm gần nhất: mỗi follower thuộc TOP_K cụm; tìm kiếm trong TOP_K leaders gần nhất
+
 class DocumentDataLoader:
     """Lớp quản lý việc nạp dữ liệu từ các tập tin trong hệ thống."""
     def __init__(self, dataset_dir):
@@ -115,20 +120,24 @@ class ClusterPruningIndexer:
         """
         n = len(self.vm.doc_names)
         if n == 0: return
-        # Tính số lượng cụm k = căn bậc 2 của N
+        # Tính số lượng cụm k = sqrt(N)
         k = max(1, int(np.sqrt(n)))
         # Bước 1: Chọn ngẫu nhiên k leader từ tập tài liệu
         self.leaders = random.sample(range(n), k)
         self.clusters = {idx: [] for idx in self.leaders}
+        print(f"  [*] Số cụm (sqrt(N)={k}), leaders: {[self.vm.doc_names[i] for i in self.leaders]}")
         
         # Bước 2: Duyệt từng tài liệu (được coi là follower)
         for doc_idx in range(n):
             doc_vec = self.vm.doc_vectors[doc_idx]
-            # Tính tương quan với tất cả leaders đã chọn
-            sims = sorted([(l_idx, self.vm.cosine_similarity(doc_vec, self.vm.doc_vectors[l_idx])) 
-                          for l_idx in self.leaders], key=lambda x: x[1], reverse=True)
-            # Gán tài liệu này vào 2 cụm có leader gần nó nhất (Top 2)
-            for l_idx, _ in sims[:2]:
+            # Tính độ tương tự cosine với tất cả leaders
+            sims = sorted(
+                [(l_idx, self.vm.cosine_similarity(doc_vec, self.vm.doc_vectors[l_idx]))
+                 for l_idx in self.leaders],
+                key=lambda x: x[1], reverse=True
+            )
+            # Gán tài liệu vào TOP_K cụm có leader gần nhất
+            for l_idx, _ in sims[:TOP_K]:
                 self.clusters[l_idx].append(doc_idx)
 
 class SearchHandler:
@@ -150,13 +159,18 @@ class SearchHandler:
         # 2. Vector hóa truy vấn sang không gian TF-IDF
         q_vec = self.vm.get_tfidf_vector(tokens)
         
-        # 3. Tìm 2 leader gần nhất với vector truy vấn của người dùng
-        leader_sims = sorted([(l_idx, self.vm.cosine_similarity(q_vec, self.vm.doc_vectors[l_idx])) 
-                             for l_idx in self.idx.leaders], key=lambda x: x[1], reverse=True)
-        
-        # 4. Gom tập hợp ứng viên từ followers của 2 leader tốt nhất này
+        # 3. Tìm 2 leaders gần nhất với vector truy vấn (yêu cầu bài)
+        leader_sims = sorted(
+            [(l_idx, self.vm.cosine_similarity(q_vec, self.vm.doc_vectors[l_idx]))
+             for l_idx in self.idx.leaders],
+            key=lambda x: x[1], reverse=True
+        )
+        top2_leaders = leader_sims[:TOP_K]
+        print(f"  [*] {TOP_K} leaders gần nhất: {[(self.vm.doc_names[l], f'{s:.4f}') for l, s in top2_leaders]}")
+
+        # 4. Gom ứng viên từ followers của 2 leaders gần nhất
         candidates = set()
-        for l_idx, _ in leader_sims[:2]:
+        for l_idx, _ in top2_leaders:
             candidates.update(self.idx.clusters[l_idx])
         
         print(f"[*] Tìm kiếm trong {len(candidates)} tài liệu ứng viên (Pruning).")
@@ -180,43 +194,23 @@ def main():
     indexer = ClusterPruningIndexer(vmodel)
     search_handler = SearchHandler(processor, vmodel, indexer)
 
-    # CHIẾN LƯỢC CACHE: Kiểm tra xem đã có dữ liệu chỉ mục lưu từ trước chưa
-    if os.path.exists(INDEX_PATH):
-        print(f"\n[*] Đang nạp chỉ mục từ file tĩnh: {INDEX_PATH}")
-        with open(INDEX_PATH, "rb") as f:
-            data = pickle.load(f)
-            # Khôi phục trạng thái từ file pkl
-            vmodel.dictionary = data['dictionary']
-            vmodel.tfidf_model = data['tfidf_model']
-            vmodel.doc_names = data['doc_names']
-            vmodel.doc_vectors = data['doc_vectors']
-            indexer.leaders = data['leaders']
-            indexer.clusters = data['clusters']
-        print("[OK] Đã nạp thành công, hệ thống sẵn sàng tìm kiếm ngay.")
-    else:
-        # Nếu chưa có index, thực thực hiện quy trình phân tích và gán cụm từ đầu
-        print("\n[*] Lần đầu khởi tạo: Đang chạy quy trình phân tích văn bản...")
-        loader = DocumentDataLoader(DATASET_DIR)
-        raw_docs = loader.load_all()
-        # Chuyển đổi toàn bộ text sang tokens
-        tokenized_docs = {name: processor.process(content) for name, content in raw_docs.items()}
-        # Xây dựng TF-IDF và chọn leaders
-        vmodel.fit(tokenized_docs)
-        indexer.build_index()
-        # Lưu lại kết quả xuống file để lần sau dùng luôn
-        with open(INDEX_PATH, "wb") as f:
-            pickle.dump({
-                'dictionary': vmodel.dictionary, 'tfidf_model': vmodel.tfidf_model,
-                'doc_names': vmodel.doc_names, 'doc_vectors': vmodel.doc_vectors,
-                'leaders': indexer.leaders, 'clusters': indexer.clusters
-            }, f)
+    # Luôn rebuild index mỗi lần chạy vì leaders được chọn ngẫu nhiên
+    # (Cluster Pruning là thuật toán xấp xỉ, kết quả có thể khác nhau giữa các lần)
+    print("\n[*] Đang phân tích văn bản và xây dựng chỉ mục phân cụm...")
+    loader = DocumentDataLoader(DATASET_DIR)
+    raw_docs = loader.load_all()
+    # Tiền xử lý: tách từ, loại stopwords
+    tokenized_docs = {name: processor.process(content) for name, content in raw_docs.items()}
+    # Xây dựng TF-IDF và phân cụm
+    vmodel.fit(tokenized_docs)
+    indexer.build_index()
 
-    print("\n" + "="*30)
-    print("HỆ THỐNG TÌM KIẾM CLUSTER PRUNING (CACHE ENABLED)")
-    print("="*30)
+    print("\n" + "="*50)
+    print("HỆ THỐNG TÌM KIẾM NHANH - CLUSTER PRUNING")
+    print("="*50)
     
     # Danh sách các truy vấn demo
-    queries = ["windows xp", "bảng lương công an"]
+    queries = ["Ốc gạo Phú Đa", "PGS Văn Như Cương"]
     search_history = []
     
     for q in queries:

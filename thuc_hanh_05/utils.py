@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from pdfminer.high_level import extract_text
 import py_vncorenlp
 import numpy as np
+import aspose.words as aw
 
 # ─────────────────────────────────────────────
 # Cấu hình đường dẫn
@@ -70,27 +71,25 @@ def read_html(path: str) -> str:
     return "\n".join(texts)
 
 def read_doc_legacy(path: str) -> str:
-    """
-    Thanh lọc văn bản thô từ file .doc (Binary). 
-    Cách xử lý: Thử dùng python-docx (nếu thực tế là docx đổi tên), hoặc rà soát string thô.
-    """
+    
     try:
-        # Thử nếu file thực chất là .docx
-        return read_docx(path)
-    except Exception:
-        # Nếu thực sự là .doc (Binary), dùng regex để trích xuất các chuỗi ký tự dài
-        # Đây là giải pháp tình thế nếu không có antiword/win32com.
-        try:
-            with open(path, "rb") as f:
-                content = f.read()
-            # Tìm các chuỗi unicode/utf-8 tiềm năng (ví dụ > 4 ký tự)
-            # Rất thô sơ, khuyến khích chuyển sang .docx để có kết quả tốt nhất.
-            text = content.decode('utf-8', errors='ignore')
-            # Loại bỏ các ký tự điều khiển
-            text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', text)
-            return text
-        except:
-            return ""
+        # Load tài liệu .doc hoặc .docx
+        doc = aw.Document(path)
+        
+        # Trích xuất toàn bộ text
+        text = doc.get_text()
+        
+        # Loại bỏ các dòng thông báo bản quyền của bản Evaluation (dùng regex để xóa cả link)
+        text = re.sub(r"Created with an evaluation copy of Aspose\.Words.*?license/", "", text, flags=re.DOTALL)
+        
+        # Làm sạch các ký tự đặc biệt Aspose thường thêm vào (như ký tự điều hướng hoặc mã lỗi)
+        text = text.replace("Evaluation Only. Created with Aspose.Words. Copyright 2003-2024 Aspose Pty Ltd.", "")
+        text = text.strip()
+        
+        return text
+    except Exception as e:
+        # print(f"  [Error] Aspose failed for {path}: {e}")
+        return ""
 
 def read_file(path: str) -> str:
     ext = os.path.splitext(path)[1].lower()
