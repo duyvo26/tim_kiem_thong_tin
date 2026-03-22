@@ -2,7 +2,7 @@
 
 - Trạng thái index: Loaded from Cache
 
-### `windows xp`
+### `Truy vấn: windows xp`
 | STT | Tài liệu | Score |
 |:--|:---|:---|
 | 1 | 1003.docx | 0.4620 |
@@ -11,7 +11,7 @@
 | 4 | 1001.docx | 0.2509 |
 | 5 | 1008.pdf | 0.0995 |
 
-### `bảng lương công an`
+### `Truy vấn: bảng lương công an`
 | STT | Tài liệu | Score |
 |:--|:---|:---|
 | 1 | 1012.html | 0.4334 |
