@@ -23,12 +23,9 @@ class DocumentDataLoader:
         """
         print(f"[*] Đang nạp dữ liệu từ: {self.dataset_dir}")
         documents = {}
-        # Lấy danh sách tất cả các file trong thư mục
         files = [f for f in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, f))]
-        
         for fname in files:
             try:
-                # Gọi hàm đọc file đa định dạng từ utils.py
                 text = utils.read_file(os.path.join(self.dataset_dir, fname))
                 if text: documents[fname] = text
             except Exception as e:
@@ -38,7 +35,6 @@ class DocumentDataLoader:
 class TextProcessor:
     """Lớp thực hiện các bước tiền xử lý ngôn ngữ văn bản."""
     def __init__(self, stopwords_path):
-        # Tải danh sách từ dừng (stopwords) từ file
         self.stopwords = utils.load_stopwords(stopwords_path)
 
     def process(self, text):
@@ -47,9 +43,7 @@ class TextProcessor:
         Input: text (str) - Chuỗi văn bản thô.
         Output: Một danh sách các tokens (list of strings).
         """
-        # Loại bỏ các ký tự đặc biệt, chuyển về chữ thường
         cleaned = utils.clean_text(text)
-        # Sử dụng VnCoreNLP để tách từ và lọc stopwords
         return utils.get_tokens(cleaned, self.stopwords)
 
 class VectorModel:
@@ -66,17 +60,15 @@ class VectorModel:
         Input: tokenized_docs (dict) - Dictionary chứa các tài liệu đã được tách từ.
         Output: Không có (Cập nhật các thuộc tính nội bộ dictionary và tfidf_model).
         """
-        # Lưu lại tên các tài liệu theo thứ tự
         self.doc_names = list(tokenized_docs.keys())
         texts = [tokenized_docs[name] for name in self.doc_names]
-        
         # 1. Tạo Dictionary (Bản đồ từ vựng <-> ID)
         self.dictionary = corpora.Dictionary(texts)
-        # 2. Chuyển văn bản thành dạng Bag-of-Words (Tuples ID-Tần suất)
+        # 2. Chuyển văn bản thành dạng Bag-of-Words
         corpus = [self.dictionary.doc2bow(text) for text in texts]
-        # 3. Huấn luyện mô hình TF-IDF dựa trên corpus vừa tạo
+        # 3. Huấn luyện mô hình TF-IDF
         self.tfidf_model = models.TfidfModel(corpus)
-        # 4. Chuyển đổi toàn bộ tài liệu sang dạng Vector TF-IDF
+        # 4. Chuyển đổi toàn bộ tài liệu sang Vector TF-IDF
         self.doc_vectors = [self.tfidf_model[bow] for bow in corpus]
 
     def get_tfidf_vector(self, tokens):
@@ -85,7 +77,6 @@ class VectorModel:
         Input: tokens (list of strings) - Danh sách các từ truy vấn.
         Output: Vectơ thưa (Sparse Vector) dưới dạng list of tuples (token_id, weight).
         """
-        # Chuyển tokens sang BoW rồi áp dụng mô hình TF-IDF
         return self.tfidf_model[self.dictionary.doc2bow(tokens)]
 
     def cosine_similarity(self, vec1, vec2):
@@ -95,14 +86,10 @@ class VectorModel:
         Output: Điểm số tương tự (float) nằm trong đoạn [0, 1].
         """
         if not vec1 or not vec2: return 0.0
-        # Chuyển vector sang dạng dictionary để truy xuất theo ID nhanh hơn
         v1, v2 = dict(vec1), dict(vec2)
-        # Tính tích vô hướng (Dot Product) của các từ chung
         dot = sum(v1[idx] * v2[idx] for idx in v1 if idx in v2)
-        # Tính độ dài (Norm) của từng vector
         norm1 = np.sqrt(sum(val**2 for val in v1.values()))
         norm2 = np.sqrt(sum(val**2 for val in v2.values()))
-        # Kết quả = Tích vô hướng / (Tích độ dài)
         return dot / (norm1 * norm2) if (norm1 * norm2) > 0 else 0.0
 
 class ClusterPruningIndexer:
@@ -114,7 +101,7 @@ class ClusterPruningIndexer:
 
     def build_index(self):
         """
-        Chức năng: Chọn ngẫu nhiên sqrt(N) leaders và gán mỗi tài liệu vào 2 cụm gần nhất.
+        Chức năng: Chọn ngẫu nhiên sqrt(N) leaders và gán mỗi tài liệu vào TOP_K cụm gần nhất.
         Input: Không có (Sử dụng dữ liệu vectơ từ vector_model).
         Output: Không có (Cập nhật danh sách leaders và các nhóm clusters).
         """
@@ -126,7 +113,7 @@ class ClusterPruningIndexer:
         self.leaders = random.sample(range(n), k)
         self.clusters = {idx: [] for idx in self.leaders}
         print(f"  [*] Số cụm (sqrt(N)={k}), leaders: {[self.vm.doc_names[i] for i in self.leaders]}")
-        
+
         # Bước 2: Duyệt từng tài liệu (được coi là follower)
         for doc_idx in range(n):
             doc_vec = self.vm.doc_vectors[doc_idx]
@@ -136,7 +123,7 @@ class ClusterPruningIndexer:
                  for l_idx in self.leaders],
                 key=lambda x: x[1], reverse=True
             )
-            # Gán tài liệu vào TOP_K cụm có leader gần nhất
+            # Gán tài liệu vào TOP_K cụm có leader gần nhất (yêu cầu bài: TOP_K=2)
             for l_idx, _ in sims[:TOP_K]:
                 self.clusters[l_idx].append(doc_idx)
 
@@ -149,44 +136,51 @@ class SearchHandler:
 
     def search(self, query, top_n=5):
         """
-        Chức năng: Thực hiện quy trình tìm kiếm Cluster Pruning (Tìm 2 leader gần nhất -> Tìm trong cụm của họ).
+        Chức năng: Thực hiện quy trình tìm kiếm Cluster Pruning.
         Input: query (str) - Chuỗi truy vấn; top_n (int) - Số lượng kết quả muốn lấy.
-        Output: Danh sách các tuples (tên_file, điểm_cosine) đã được sắp xếp giảm dần.
+        Output: Dict gồm 'results', 'top_leaders', 'num_candidates'.
         """
         # 1. Tiền xử lý truy vấn
         tokens = self.pre.process(query)
-        if not tokens: return []
+        if not tokens:
+            return {"results": [], "top_leaders": [], "num_candidates": 0}
         # 2. Vector hóa truy vấn sang không gian TF-IDF
         q_vec = self.vm.get_tfidf_vector(tokens)
-        
-        # 3. Tìm 2 leaders gần nhất với vector truy vấn (yêu cầu bài)
+
+        # 3. Tìm TOP_K leaders gần nhất với vector truy vấn (yêu cầu bài: TOP_K=2)
         leader_sims = sorted(
             [(l_idx, self.vm.cosine_similarity(q_vec, self.vm.doc_vectors[l_idx]))
              for l_idx in self.idx.leaders],
             key=lambda x: x[1], reverse=True
         )
-        top2_leaders = leader_sims[:TOP_K]
-        print(f"  [*] {TOP_K} leaders gần nhất: {[(self.vm.doc_names[l], f'{s:.4f}') for l, s in top2_leaders]}")
+        top_leaders_idx = leader_sims[:TOP_K]
+        top_leaders_info = [(self.vm.doc_names[l], s) for l, s in top_leaders_idx]
+        print(f"  [*] {TOP_K} leaders gần nhất: {[(name, f'{s:.4f}') for name, s in top_leaders_info]}")
 
-        # 4. Gom ứng viên từ followers của 2 leaders gần nhất
+        # 4. Gom ứng viên từ followers của TOP_K leaders gần nhất
         candidates = set()
-        for l_idx, _ in top2_leaders:
+        for l_idx, _ in top_leaders_idx:
             candidates.update(self.idx.clusters[l_idx])
-        
+
         print(f"[*] Tìm kiếm trong {len(candidates)} tài liệu ứng viên (Pruning).")
         # 5. Xếp hạng: Chỉ tính Cosine với tập ứng viên thu gọn
-        results = [(self.vm.doc_names[idx], self.vm.cosine_similarity(q_vec, self.vm.doc_vectors[idx])) 
-                   for idx in candidates]
-        # Sắp xếp kết quả giảm dần theo điểm số
-        return sorted([r for r in results if r[1] > 0], key=lambda x: x[1], reverse=True)[:top_n]
+        results = [
+            (self.vm.doc_names[idx], self.vm.cosine_similarity(q_vec, self.vm.doc_vectors[idx]))
+            for idx in candidates
+        ]
+        ranked = sorted([r for r in results if r[1] > 0], key=lambda x: x[1], reverse=True)[:top_n]
+        return {
+            "results":        ranked,
+            "top_leaders":    top_leaders_info,
+            "num_candidates": len(candidates),
+        }
 
 def main():
-    """Hàm khởi chạy chính của chương trình, điều phối giữa việc nạp cache và xử lý mới."""
+    """Hàm khởi chạy chính của chương trình."""
     DIR_ROOT = os.path.dirname(os.path.abspath(__file__))
-    DATASET_DIR = utils.DATASET_DIR
+    DATASET_DIR   = utils.DATASET_DIR
     STOPWORDS_PATH = utils.STOPWORDS_PATH
-    REPORT_PATH = os.path.join(DIR_ROOT, "report_05.md")
-    INDEX_PATH = os.path.join(DIR_ROOT, "index.pkl")
+    REPORT_PATH   = os.path.join(DIR_ROOT, "report_05.md")
 
     # Khởi tạo các thành phần cốt lõi
     processor = TextProcessor(STOPWORDS_PATH)
@@ -194,46 +188,52 @@ def main():
     indexer = ClusterPruningIndexer(vmodel)
     search_handler = SearchHandler(processor, vmodel, indexer)
 
-    # Luôn rebuild index mỗi lần chạy vì leaders được chọn ngẫu nhiên
-    # (Cluster Pruning là thuật toán xấp xỉ, kết quả có thể khác nhau giữa các lần)
+    # Luôn rebuild index (leaders chọn ngẫu nhiên mỗi lần — đặc tính của Cluster Pruning)
     print("\n[*] Đang phân tích văn bản và xây dựng chỉ mục phân cụm...")
     loader = DocumentDataLoader(DATASET_DIR)
     raw_docs = loader.load_all()
-    # Tiền xử lý: tách từ, loại stopwords
     tokenized_docs = {name: processor.process(content) for name, content in raw_docs.items()}
-    # Xây dựng TF-IDF và phân cụm
     vmodel.fit(tokenized_docs)
     indexer.build_index()
 
     print("\n" + "="*50)
     print("HỆ THỐNG TÌM KIẾM NHANH - CLUSTER PRUNING")
     print("="*50)
-    
-    # Danh sách các truy vấn demo
+
     queries = ["Ốc gạo Phú Đa", "PGS Văn Như Cương"]
     search_history = []
-    
+
     for q in queries:
         print(f"\n[*] Truy vấn: '{q}'")
-        res = search_handler.search(q)
-        search_history.append((q, res))
+        ret = search_handler.search(q)
+        res            = ret["results"]
+        top_leaders    = ret["top_leaders"]
+        num_candidates = ret["num_candidates"]
+        search_history.append((q, res, top_leaders, num_candidates))
         for i, (name, score) in enumerate(res, 1):
             print(f"  {i}. {name} (Score: {score:.4f})")
 
-    # Tự động xuất báo cáo kết quả ra file Markdown
+    # Xuất báo cáo ra file Markdown
     try:
         with open(REPORT_PATH, "w", encoding="utf-8") as f:
-            f.write("# BÁO CÁO TÌM KIẾM (CÓ SỬ DỤNG CACHE)\n\n")
-            f.write(f"- Trạng thái index: {'Loaded from Cache' if os.path.exists(INDEX_PATH) else 'Newly Created'}\n\n")
-            for q, res in search_history:
-                f.write(f"### `Truy vấn: {q}`\n")
+            f.write("# BÁO CÁO TÌM KIẾM - CLUSTER PRUNING\n\n")
+            f.write(f"- Số cụm mỗi tài liệu thuộc về (TOP\\_K): `{TOP_K}`\n")
+            f.write(f"- Số leaders được chọn (sqrt(N)): `{len(indexer.leaders)}`\n\n")
+            for q, res, top_leaders, num_candidates in search_history:
+                f.write(f"### Truy vấn: `{q}`\n\n")
+                f.write(f"- **{TOP_K} leaders gần nhất:** ")
+                f.write(", ".join(f"`{name}` (score: {s:.4f})" for name, s in top_leaders) + "\n")
+                f.write(f"- **Số tài liệu ứng viên (Pruning):** `{num_candidates}`\n\n")
                 if res:
                     f.write("| STT | Tài liệu | Score |\n|:--|:---|:---|\n")
                     for i, (name, score) in enumerate(res, 1):
                         f.write(f"| {i} | {name} | {score:.4f} |\n")
+                else:
+                    f.write("_Không tìm thấy kết quả._\n")
                 f.write("\n")
         print(f"\n[OK] Báo cáo đã cập nhật tại: {REPORT_PATH}")
-    except Exception as e: print(f"Lỗi: {e}")
+    except Exception as e:
+        print(f"Lỗi: {e}")
 
 if __name__ == "__main__":
     main()
