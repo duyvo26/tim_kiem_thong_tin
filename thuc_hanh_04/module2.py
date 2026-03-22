@@ -2,7 +2,56 @@ import math
 import pickle
 import os
 from collections import Counter
+import re
 from datasets import load_dataset
+from pypdf import PdfReader
+from bs4 import BeautifulSoup
+
+def extract_text_from_file(file_path):
+    """
+    Trich xuat van ban tu mot tep tin dua tren dinh dang (.txt, .pdf, .html).
+    """
+    ext = os.path.splitext(file_path)[1].lower()
+    text = ""
+    
+    try:
+        if ext == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+        elif ext == '.pdf':
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        elif ext == '.html' or ext == '.htm':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                soup = BeautifulSoup(f.read(), 'html.parser')
+                text = soup.get_text()
+    except Exception as e:
+        print(f"Khong the doc tep {file_path}: {e}")
+        
+    return text
+
+def load_from_folder(folder_path):
+    """
+    Quet toan bo folder de lay van ban tu cac tep .txt, .pdf, .html.
+    """
+    corpus = []
+    if not os.path.exists(folder_path):
+        print(f"Folder {folder_path} khong ton tai.")
+        return corpus
+        
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            content = extract_text_from_file(file_path)
+            if content:
+                # Tach thanh cac cau
+                sentences = re.split(r'[\n.!?]+', content)
+                for s in sentences:
+                    s = s.strip()
+                    if s and len(s.split()) >= 3:
+                        corpus.append(s)
+    return corpus
 
 # ==========================================
 # MODULE 2: PHAT HIEN LOI SAI THEO NGU CANH
@@ -88,7 +137,10 @@ class Module2_ContextChecker:
                 std = math.sqrt(sum((x - mean)**2 for x in log_probs) / len(log_probs)) 
             else:
                 std = 0
-            self.threshold = mean - 2 * std
+            
+            # Dung mean - 2.5 * std de loc ra nhung cau 'bat thuong' khoi tap du lieu chuan
+            self.threshold = mean - 2.5 * std
+            print(f"Debug LM: Mean={mean:.4f}, Std={std:.4f}, Threshold={self.threshold:.4f}")
             
     def calculate_log_prob(self, sentence):
         """
@@ -149,19 +201,26 @@ if __name__ == "__main__":
     MODEL_PATH = "trigram_lm.pkl"
     CORPUS_DATA = []
     
+    # CHON NGUON DU LIEU: 'huggingface' HOAC 'folder'
+    DATA_SOURCE = "folder" 
+    FOLDER_PATH = "./dataset" # Thay doi neu dung nguon 'folder'
+
     if not os.path.exists(MODEL_PATH):
-        print("Chua co model huan luyen. Lay dataset mau tu Hugging Face (undertheseanlp/UVB-v0.1)...")
-        # Lay 10 records cho demo nhanh
-        ds = load_dataset("undertheseanlp/UVB-v0.1", split="train[:50]")
-        
-        for item in ds:
-            text_content = item.get('content', '')
-            if text_content:
-                sentences = text_content.replace('\n', '.').replace('!', '.').replace('?', '.').split('.')
-                for s in sentences:
-                    s = s.strip()
-                    if s and len(s.split()) >= 3:
-                        CORPUS_DATA.append(s)
+        if DATA_SOURCE == "huggingface":
+            print("Chua co model huan luyen. Lay dataset mau tu Hugging Face (undertheseanlp/UVB-v0.1)...")
+            ds = load_dataset("undertheseanlp/UVB-v0.1", split="train[:20]")
+            for item in ds:
+                text_content = item.get('content', '')
+                if text_content:
+                    # Su dung Regex de cat nho van ban thanh cac cau theo dau cham, xuong dong, cham hoi, cham cam
+                    sentences = re.split(r'[\n.!?]+', text_content)
+                    for s in sentences:
+                        s = s.strip()
+                        if s and len(s.split()) >= 3:
+                            CORPUS_DATA.append(s)
+        else:
+            print(f"Chua co model huan luyen. Dang quet du lieu tu folder: {FOLDER_PATH}...")
+            CORPUS_DATA = load_from_folder(FOLDER_PATH)
         
         print(f"Hoan tat trich xuat {len(CORPUS_DATA)} mau cau.")
         mod2 = Module2_ContextChecker(corpus_sentences=CORPUS_DATA, model_path=MODEL_PATH)
@@ -172,10 +231,13 @@ if __name__ == "__main__":
     print(f"San sang! Threshold hien tai cua LM: {mod2.threshold:.4f}")
     
     queries = [
-        "phát triển kinh tế xã hội",
-        "phát triển kinh tế ngủ",
-        "quân ngủ",
-        "nghĩ ngơi",
+        # CAP 1: Lay tu du lieu HTML (Iran)
+        "Vệ binh Iran tuyên bố sẽ gây thiệt hại nặng cho ngành công nghiệp dầu khí ở Trung Đông.", # Dung
+        "Vệ binh Iran tuyên bố sẽ ăn thiệt hại nặng cho ngành công nghiệp dầu khí ở Trung Đông.", # Sai ngu canh
+
+        # CAP 2: Lay tu du lieu PDF (Software)
+        "Chương trình Disk Cleaner tích hợp giúp bạn tìm và gỡ bỏ những file không cần thiết.", # Dung
+        "Chương trình Disk Cleaner tích hợp giúp bạn uống và ngủ những file không cần thiết.", # Sai ngu canh
     ]
     
     for q in queries:
